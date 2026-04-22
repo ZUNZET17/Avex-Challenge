@@ -3,7 +3,7 @@
   src="{{ 'cart-icon.js' | asset_url }}"
   fetchpriority="low"
 ></script>
-
+<script src="{{ 'avex-upsell.js' | asset_url }}" type="module" fetchpriority="low"></script>
 {% capture cart_icon %}
   <cart-icon
     class="header-actions__cart-icon{% if display_style == 'text' %} header-actions__cart-icon--text{% endif %}{% unless cart == empty %} header-actions__cart-icon--has-cart{% endunless %}"

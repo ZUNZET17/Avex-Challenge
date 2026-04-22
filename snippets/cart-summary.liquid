@@ -1,44 +1,42 @@
 {%- doc -%}
-  Renders the cart summary totals.
 
-  @param {string} [accelerated_checkout_buttons_layout] - { 'vertical' } Forced layout of the additional checkout buttons, instead of relying on platform's layout.
-  @param {string} [section_id] - The section ID for cart discount component.
+  #cart-upsell is empty on first render. On `dialog:open`, JS fetches the Recommendations
+  API with this section's ID — Shopify re-renders the section server-side with
+  `recommendations.performed = true` — and the returned HTML is swapped into the DOM.
+  Cart items are filtered out server-side via `cart.items | map: 'product_id'`.
+  Refreshes on `cart:update` with a 300ms delay to let Horizon's morphSection finish first.
 {%- enddoc -%}
 
 {% if settings.show_cart_upsell %}
-  <div id="cart-upsell" data-section-id="{{ section.id }}"
-    data-recommendations-url="{{ routes.product_recommendations_url }}?limit=6" class="cart-upsell-container">
+  <avex-upsell
+    class="cart-upsell-container"
+    data-section-id="{{ section.id }}"
+    data-recommendations-url="{{ routes.product_recommendations_url }}?limit=6"
+  >
     {%- if recommendations.performed and recommendations.products_count > 0 -%}
-      <div class="cart-upsell__title">
-        {{ 'content.cart_upsell_title' | t }}
-      </div>
-      <div class="cart-upsell" 
-        >
-        
-          {%- assign cart_product_ids = cart.items | map: 'product_id' -%}
-          {%- for product in recommendations.products -%}
-            {%- unless cart_product_ids contains product.id -%}
-              <div class="cart-upsell__product">
-                <img src="{{ product.featured_image | image_url: width: 200 }}"
-                  loading="lazy"
-                  alt="{{ product.featured_image.alt | default: product.title | escape }}"
-                  width="100" height="100">
-                <span class="cart-upsell__product-title">{{ product.title }}</span>
-                {%- if product.first_available_variant -%}
-                  <button
-                    class="cart-upsell__add-btn"
-                    data-variant-id="{{ product.first_available_variant.id }}"
-                  >
-                    Add
-                  </button>
-                {%- endif -%}
-              </div>
-            {%- endunless -%}
-          {%- endfor -%}
-        
+      <div class="cart-upsell__title">{{ 'content.cart_upsell_title' | t }}</div>
+      <div class="cart-upsell">
+        {%- assign cart_product_ids = cart.items | map: 'product_id' -%}
+        {%- for product in recommendations.products -%}
+          {%- unless cart_product_ids contains product.id -%}
+            <div class="cart-upsell__product">
+              <img src="{{ product.featured_image | image_url: width: 200 }}"
+                loading="lazy"
+                alt="{{ product.featured_image.alt | default: product.title | escape }}"
+                width="100" height="100">
+              <span class="cart-upsell__product-title">{{ product.title }}</span>
+              {%- if product.first_available_variant -%}
+                <button
+                  class="cart-upsell__add-btn"
+                  data-variant-id="{{ product.first_available_variant.id }}"
+                >Add</button>
+              {%- endif -%}
+            </div>
+          {%- endunless -%}
+        {%- endfor -%}
       </div>
     {%- endif -%}
-  </div>
+  </avex-upsell>
 {% endif %}
 
 <div class="cart-totals">
@@ -317,67 +315,6 @@
   {% endif %}
 </div>
 
-<script>
-  const refreshUpsellProducts = async () => {
-    const upsellEl = document.querySelector('#cart-upsell');
-    if (!upsellEl) return;
-
-    upsellEl.classList.add('is-fading-out');
-    await new Promise(resolve => setTimeout(resolve, 200));
-    upsellEl.innerHTML = '<p class="cart-upsell__loading">Loading products...</p>';
-    upsellEl.classList.remove('is-fading-out');
-
-    const cart = await fetch(window.Shopify.routes.root + 'cart.js').then(r => r.json());
-
-    if (!cart.items.length) {
-      upsellEl.innerHTML = '';
-      return;
-    }
-
-    const productId = cart.items[0].product_id;
-    const recsUrl = upsellEl.dataset.recommendationsUrl;
-    const sectionId = upsellEl.dataset.sectionId;
-
-    const url = `${recsUrl}&product_id=${productId}&section_id=${sectionId}&intent=related`;
-    const html = await fetch(url).then(r => r.text());
-
-    const doc = document.createElement('div');
-    doc.innerHTML = html;
-    const freshUpsell = doc.querySelector('#cart-upsell');
-    if (freshUpsell) {
-      const currentUpsellEl = document.querySelector('#cart-upsell');
-      if (currentUpsellEl) {
-        currentUpsellEl.classList.add('is-fading-out');
-        await new Promise(resolve => setTimeout(resolve, 200));
-        currentUpsellEl.replaceWith(freshUpsell);
-      }
-    }
-  };
-
-  document.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.cart-upsell__add-btn');
-    if (!btn) return;
-
-    btn.disabled = true;
-    btn.textContent = '...';
-
-    await fetch('/cart/add.js', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: [{ id: Number(btn.dataset.variantId), quantity: 1 }] })
-    });
-
-    document.dispatchEvent(new CustomEvent('cart:update', {
-      bubbles: true,
-      detail: { data: { source: 'cart-upsell' } }
-    }));
-  });
-
-  document.querySelector('cart-drawer-component')?.addEventListener('dialog:open', refreshUpsellProducts);
-  document.addEventListener('cart:update', () => {
-    refreshUpsellProducts();
-  });
-</script>
 {% stylesheet %}
   @keyframes upsell-fade-in {
     from { opacity: 0; transform: translateY(6px); }
