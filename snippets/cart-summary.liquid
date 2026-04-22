@@ -5,6 +5,27 @@
   @param {string} [section_id] - The section ID for cart discount component.
 {%- enddoc -%}
 
+{% if settings.show_cart_upsell %}
+  <div class="cart-upsell">
+    <div class="cart-upsell__title">
+      {{ 'content.cart_upsell_title' | t }}
+    </div>
+    <div class="cart-upsell__products">
+      {% for product in shop.products limit: 4 %}
+        {% comment %}
+          custom product card code
+        {% endcomment %}
+        <a href="{{ product.url }}" class="cart-upsell__product">
+          {% render 'image', image: product.featured_image, height: 100 %}
+          <span class="cart-upsell__product-title">
+            {{ product.title | escape }}
+          </span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
 <div class="cart-totals">
   {% # We need to keep this node in place to allow morphing to work properly # %}
   <div class="cart-totals__original-container cart-primary-typography">

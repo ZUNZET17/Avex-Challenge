@@ -151,6 +151,7 @@
     }
   },
   "content": {
+    "cart_upsell_title": "You might also like",
     "cancel": "Cancel",
     "discount": "Discount",
     "account_title": "Account",

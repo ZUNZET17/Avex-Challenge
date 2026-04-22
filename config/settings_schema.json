@@ -1666,6 +1666,12 @@
     "name": "t:names.cart",
     "settings": [
       {
+        "type": "checkbox",
+        "id": "show_cart_upsell",
+        "label": "t:settings.show_minicart_upsell",
+        "default": true
+      },
+      {
         "type": "select",
         "id": "cart_type",
         "label": "t:settings.cart_type",
