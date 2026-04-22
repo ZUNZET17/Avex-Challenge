@@ -1,3 +1,9 @@
+// #cart-upsell is empty on first render. On `dialog:open`, JS fetches the Recommendations
+// API with this section's ID — Shopify re-renders the section server-side with
+// `recommendations.performed = true` — and the returned HTML is swapped into the DOM.
+// Cart items are filtered out server-side via `cart.items | map: 'product_id'`.
+// Refreshes on `cart:update` with a 300ms delay to let Horizon's morphSection finish first.
+
 class AvexUpsellComponent extends HTMLElement {
   #boundRefresh = this.refresh.bind(this);
   #boundHandleCartUpdate = this.#handleCartUpdate.bind(this);
