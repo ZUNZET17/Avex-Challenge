@@ -322,7 +322,10 @@
     const upsellEl = document.querySelector('#cart-upsell');
     if (!upsellEl) return;
 
+    upsellEl.classList.add('is-fading-out');
+    await new Promise(resolve => setTimeout(resolve, 200));
     upsellEl.innerHTML = '<p class="cart-upsell__loading">Loading products...</p>';
+    upsellEl.classList.remove('is-fading-out');
 
     const cart = await fetch(window.Shopify.routes.root + 'cart.js').then(r => r.json());
 
@@ -343,7 +346,11 @@
     const freshUpsell = doc.querySelector('#cart-upsell');
     if (freshUpsell) {
       const currentUpsellEl = document.querySelector('#cart-upsell');
-      if (currentUpsellEl) currentUpsellEl.replaceWith(freshUpsell);
+      if (currentUpsellEl) {
+        currentUpsellEl.classList.add('is-fading-out');
+        await new Promise(resolve => setTimeout(resolve, 200));
+        currentUpsellEl.replaceWith(freshUpsell);
+      }
     }
   };
 
@@ -372,6 +379,16 @@
   });
 </script>
 {% stylesheet %}
+  @keyframes upsell-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes upsell-fade-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(6px); }
+  }
+
   .cart-upsell-container {
     width: 100%;
   }
@@ -382,6 +399,11 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     gap: .5rem;
+    animation: upsell-fade-in 300ms ease forwards;
+  }
+
+  .cart-upsell.is-fading-out {
+    animation: upsell-fade-out 200ms ease forwards;
   }
 
   .cart-upsell__product {
